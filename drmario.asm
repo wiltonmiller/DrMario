@@ -26,6 +26,16 @@ ADDR_DSPL:
 ADDR_KBRD:
     .word 0xffff0000
 
+# Four corners of the bottle
+TOP_LEFT_OFFSET: 
+  .word 3872
+BOTTOM_LEFT_OFFSET:
+  .word 14624
+TOP_RIGHT_OFFSET:
+  .word 4008
+BOTTOM_RIGHT_OFFSET: 
+  .word 14764
+
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -59,18 +69,139 @@ capsule_colour2:
 
     # Run the game.
 main:
-    li $t1, 0xff0000        # $t1 = red
-    #li $t2, 0x00ff00        # $t2 = green
-    #li $t3, 0x0000ff        # $t3 = blue
-    #li $t4, 0xffaaaaaa      # t4 = light gray
+    # li $t1, 0xffaaaaaa      # t4 = light gray
     
     # Initialize the game
     jal draw_bottle
 
-draw_bottle:
-  lw $t8 ADDR_DSPL
-  addi $t8, $t8, 3872
-  sw $t1 0($t8)
+    lw $t8 ADDR_DSPL
+    li $t1, 0xff0000
+    sw $t1, 14240($t8)
+    sw $t1, 14244($t8)
+
+    sw $t1, 14496($t8)
+    sw $t1, 14500($t8)
+
+draw_bottle:  
+  # SETTING UP LEFT_SIDE_LOOP
+  
+  lw $t8 ADDR_DSPL # starting address of the dispaly
+  
+  lw $t7, TOP_LEFT_OFFSET 
+  add $t7, $t7, $t8 # top left corner of the bottle
+
+  lw $t6, BOTTOM_LEFT_OFFSET
+  add $t6, $t6, $t8 # bottom left corner of the bottle
+
+  li $t4, 0x888888 # light grey
+
+  li $t5, 968 # $ grid index (3872 / 4)
+  la $t9, grid # $ base address of grid
+
+LEFT_SIDE_LOOP:
+  sw $t4, 0($t7) # draw to display
+  sw $t4, 4($t7) # thicken line
+
+  sll $t3, $t5, 2 # convert grid index to byte offset
+  add $t3, $t3, $t9 # grid + offset
+  sw $t4, 0($t3) # update grid
+
+  addi $t7, $t7, 256 # next row in display (64 * 4)
+  addi $t5, $t5, 64 # next row in grid
+
+  ble $t7, $t6, LEFT_SIDE_LOOP
+
+  #SEETING UP RIGHT_SIDE_LOOP 
+  
+  lw $t7, TOP_RIGHT_OFFSET
+  add $t7, $t7, $t8 # top left right corner of the bottle
+
+  lw $t6, BOTTOM_RIGHT_OFFSET
+  add $t6, $t6, $t8 # bottom right corner of the bottle
+
+  li $t5, 1000 # grid index (1000 / 4)
+
+RIGHT_SIDE_LOOP:
+  sw $t4 0($t7) # draw to display
+  sw $t4 4($t7)
+
+  sll $t3, $t5, 2 # convert index to byte offest
+  add $t3, $t3, $t9 # grind + offest
+  sw $t4, 0($t3)
+
+  addi $t7, $t7, 256 #go to the next row in the disaply
+  addi $t5, $t5, 64 # go to the next row in the grid
+
+  ble $t7, $t6, RIGHT_SIDE_LOOP
+
+  # SETTING UP BOTTOM_LOOP
+  
+  lw $t7, BOTTOM_LEFT_OFFSET
+  add $t7, $t7, $t8 # top left corner of the bottle
+
+  lw $t6, BOTTOM_RIGHT_OFFSET
+  add $t6, $t6, $t8 # bottom right corner of the bottle
+
+  li $t5, 3528 # grid index (14112 / 4)
+
+BOTTOM_LOOP:
+  sw $t4 0($t7) # draw to display
+  sw $t4, 256($t7)
+
+  sll $t3, $t5, 2 # convert index to byte offest
+  add $t3, $t3, $t9 # grind + offest
+  sw $t4, 0($t3)
+
+  addi $t7, $t7, 4 #go to the next pixel in the disaply
+  addi $t5, $t5, 1 # go to the next index in the grid
+
+  ble $t7, $t6, BOTTOM_LOOP
+
+  # SETTING UP ENTRANCE_LOOP_LEFT
+  lw $t7, TOP_LEFT_OFFSET
+  add $t7, $t7, $t8 # top left corner of the bottle
+
+  li $t6, 3924 # byte offset of left entrnace
+  add $t6, $t6, $t8 # addresss value of left entrace
+
+  li $t5, 968 # $ grid index (3872 / 4)
+  
+ENTRANCE_LOOP_LEFT:
+  sw $t4 0($t7) # draw to display
+  sw $t4 256($t7)
+
+  sll $t3, $t5, 2 # convert index to byte offest
+  add $t3, $t3, $t9 # grind + offest
+  sw $t4, 0($t3)
+
+  addi $t7, $t7, 4 # go to the next pixel in the disaply
+  addi $t5, $t5, 1 # go to the next index in the grid
+
+  ble $t7, $t6, ENTRANCE_LOOP_LEFT
+
+  # SETTING UP THE ENTRANCE_LOOP_RIGHT
+  
+  lw $t7, TOP_RIGHT_OFFSET
+  add $t7, $t7, $t8 # top right corner of the bottle
+
+  li $t6, 3956
+  add $t6, $t6, $t8 # addresss value of right entrace
+
+  li $t5, 988 # grid index (3952/4) 
+
+ENTRANCE_LOOP_RIGHT:
+  sw $t4 0($t6) # draw to display
+  sw $t4 256($t6)
+
+  sll $t3, $t5, 2 # convert index to byte offest
+  add $t3, $t3, $t9 # grind + offest
+  sw $t4, 0($t3)
+
+  addi $t6, $t6, 4 # go to the next pixel in the disaply
+  addi $t5, $t5, 1 # go to the next index in the grid
+
+  bge $t7, $t6, ENTRANCE_LOOP_RIGHT
+  
 
 game_loop:
     # 1a. Check if key has been pressed
