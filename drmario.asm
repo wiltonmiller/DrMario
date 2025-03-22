@@ -2,7 +2,7 @@
 # This file contains our implementation of Dr Mario.
 #
 # Student 1: Wilton Miller, 1009976171
-# Student 2: Name, Student Number (if applicable)
+# Student 2: Kunyu (Leo) Li, 1010371170
 #
 # We assert that the code submitted here is entirely our own 
 # creation, and will indicate otherwise when it is not.
@@ -33,6 +33,16 @@ ADDR_KBRD:
 grid:
   .space 16384
 
+# Colors:
+red:
+  .word 0xff0000
+green:
+  .word 0x00ff00
+blue:
+  .word 0x0000ff
+light_gray:
+  .word 0xffaaaaaa
+
 # Current Capsule State:
   
 # The row of the capsules anchor cell
@@ -41,7 +51,9 @@ capsule_row:
 # The column of the capsules anchor cell
 capsule_col:
   .word 31
-# The orientation of the capsule (0 = Horizontal, 1 = Vertical)
+# The orientation of the capsule, based on the left-half of the capsule 
+# (0 = Horizontal_right, 1 = Vertical_down, 
+#  2 = Horizontal_left, 3 = Vertical_up)
 capsule_orient:
   .word 0
 # The colour of the first cell (anchor) of the capsule
@@ -59,18 +71,45 @@ capsule_colour2:
 
     # Run the game.
 main:
-    li $t1, 0xff0000        # $t1 = red
-    #li $t2, 0x00ff00        # $t2 = green
-    #li $t3, 0x0000ff        # $t3 = blue
-    #li $t4, 0xffaaaaaa      # t4 = light gray
+    la $t1, red         # $t1 = red
     
     # Initialize the game
     jal draw_bottle
 
 draw_bottle:
-  lw $t8 ADDR_DSPL
-  addi $t8, $t8, 3872
-  sw $t1 0($t8)
+    lw $t8 ADDR_DSPL
+    addi $t8, $t8, 3872
+    sw $t1 0($t8)
+
+gen_virus:
+    
+
+cal_location:
+    
+
+# gen_int:
+#     li $v0, 42
+#     li $a0, 0
+#     li $a1, 15
+#     syscall
+#     jr $ra
+
+draw_cap:
+    addi $s5, $zero, 4416
+    jal draw_block
+    addi $s5, $s5, 8
+    jal draw_block
+
+draw_block:
+    lw $t8 ADDR_DSPL
+    add $t8, $t8, $s5
+    sw $t1 0($t8)
+    sw $t1 4($t8)
+    sw $t1 256($t8)
+    sw $t1 260($t8)
+    jr $ra
+
+
 
 game_loop:
     # 1a. Check if key has been pressed
